@@ -78,6 +78,7 @@ function openSession(id){
   showModal(`<div class="modal-header"><h2>${esc(w.name)}</h2><button class="close" onclick="closeModal()">×</button></div>
   ${w.exercises.map(ex=>exerciseHTML(ex)).join("")}
   <button class="primary full" onclick="closeModal()">Finalizar treino</button>`);
+  hydratePhotos();
 }
 function exerciseHTML(ex){
   return `<article class="exercise">
@@ -149,7 +150,12 @@ async function addExercise(){
 }
 document.addEventListener("change",async e=>{
  const input=e.target.closest(".photo-input");if(!input||!input.files[0])return;
- const data=await fileToDataURL(input.files[0]);await savePhoto(input.dataset.photo,data);toast("Foto salva");
+ const data=await fileToDataURL(input.files[0]);
+ await savePhoto(input.dataset.photo,data);
+ const sec=input.closest("[data-editor-ex]");
+ const preview=sec?.querySelector("#preview-"+sec.dataset.editorEx);
+ if(preview) preview.innerHTML=`<img class="photo-preview" src="${data}" alt="Foto do exercício">`;
+ toast("Foto salva");
 });
 async function saveEditor(){
  const w=state.workouts.find(x=>x.id===currentEditorId);if(!w)return;
@@ -177,8 +183,23 @@ function saveSettings(){state.userName=(document.querySelector("#settingsName").
 
 function fileToDataURL(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file)})}
 function photoDB(){return new Promise((resolve,reject)=>{const r=indexedDB.open(PHOTO_DB,1);r.onupgradeneeded=()=>r.result.createObjectStore("photos");r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}
-async function savePhoto(key,data){const db=await photoDB();return new Promise((res,rej)=>{const tx=db.transaction("photos","readwrite");tx.objectStore("photos").put(data,key);tx.oncomplete=res;tx.onerror=()=>rej(tx.error)})}
+async function savePhoto(key,data){
+  const db=await photoDB();
+  return new Promise((res,rej)=>{
+    const tx=db.transaction("photos","readwrite");
+    tx.objectStore("photos").put(data,key);
+    tx.oncomplete=res;
+    tx.onerror=()=>rej(tx.error);
+  });
+}
 async function getPhoto(key){const db=await photoDB();return new Promise((res,rej)=>{const tx=db.transaction("photos","readonly");const q=tx.objectStore("photos").get(key);q.onsuccess=()=>res(q.result||null);q.onerror=()=>rej(q.error)})}
 
 if("serviceWorker" in navigator) window.addEventListener("load",()=>navigator.serviceWorker.register("service-worker.js").catch(()=>{}));
 render();
+
+let refreshing=false;
+navigator.serviceWorker?.addEventListener("controllerchange",()=>{
+  if(refreshing)return;
+  refreshing=true;
+  window.location.reload();
+});
