@@ -97,12 +97,12 @@ async function hydratePhotos(){
     if(data){const box=document.querySelector("#photo-"+ex.id);if(box)box.innerHTML=`<img src="${data}" alt="">`;}
   }
 }
-document.addEventListener("click",e=>{
+document.addEventListener("click",async e=>{
   const b=e.target.closest("[data-set]"); if(!b)return;
   const [eid,set]=b.dataset.set.split("-");
   completed.add(b.dataset.set); b.classList.add("done"); b.querySelector("span:last-child").textContent="Feita ✓";
   const w=state.workouts.find(x=>x.id===currentWorkoutId), ex=w?.exercises.find(x=>x.id===b.dataset.ex);
-  if(ex){startRest(ex.id,ex.rest)}
+  if(ex){await startRest(ex.id,ex.rest)}
 });
 
 function getAudioContext(){
@@ -111,30 +111,44 @@ function getAudioContext(){
     if(!Ctx)return null;
     audioContext=new Ctx();
   }
-  if(audioContext.state==='suspended') audioContext.resume().catch(()=>{});
   return audioContext;
 }
-function playBeep(){
-  const ctx=getAudioContext(); if(!ctx)return;
-  const start=ctx.currentTime;
-  [0,0.22,0.44].forEach(delay=>{
-    const now=start+delay;
-    const osc=ctx.createOscillator();
-    const gain=ctx.createGain();
-    osc.type='sine';
-    osc.frequency.setValueAtTime(880,now);
-    gain.gain.setValueAtTime(0.0001,now);
-    gain.gain.exponentialRampToValueAtTime(0.22,now+0.015);
-    gain.gain.exponentialRampToValueAtTime(0.0001,now+0.18);
-    osc.connect(gain); gain.connect(ctx.destination);
-    osc.start(now); osc.stop(now+0.2);
-  });
+async function unlockAudio(){
+  const ctx=getAudioContext(); if(!ctx)return false;
+  try{
+    if(ctx.state==='suspended') await ctx.resume();
+    return ctx.state==='running';
+  }catch(e){ return false; }
 }
-function startRest(exId,s){
+async function playBeep(){
+  const ctx=getAudioContext(); if(!ctx)return false;
+  try{
+    if(ctx.state==='suspended') await ctx.resume();
+    if(ctx.state!=='running')return false;
+    const start=ctx.currentTime+0.03;
+    // Three loud, short tones designed to be easy to hear from a nearby iPhone.
+    [0,0.28,0.56].forEach((delay,i)=>{
+      const now=start+delay;
+      const osc=ctx.createOscillator();
+      const gain=ctx.createGain();
+      osc.type='square';
+      osc.frequency.setValueAtTime([740,880,1046][i],now);
+      gain.gain.setValueAtTime(0.0001,now);
+      gain.gain.exponentialRampToValueAtTime(0.42,now+0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001,now+0.22);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(now); osc.stop(now+0.24);
+    });
+    return true;
+  }catch(e){ return false; }
+}
+async function startRest(exId,s){
   clearInterval(timer);
   timerExerciseId=exId;
   seconds=Math.max(0,Number(s)||0);
-  getAudioContext();
+  // This is called directly from the user's tap on the series button.
+  // Unlocking audio here gives iOS the user gesture it needs.
+  await unlockAudio();
   updateRest();
   if(seconds===0)return;
   timer=setInterval(()=>{
@@ -162,7 +176,7 @@ function updateRest(){
   const box=document.querySelector("#rest-"+timerExerciseId); if(!box)return;
   if(seconds<=0){box.innerHTML="";return}
   const m=String(Math.floor(seconds/60)).padStart(2,"0"),s=String(seconds%60).padStart(2,"0");
-  box.innerHTML=`<div class="rest"><strong>Descanso ${m}:${s}</strong><button onclick="skipRest()">Pular</button></div>`;
+  box.innerHTML=`<div class="rest"><strong>Descanso ${m}:${s}</strong><div class="rest-actions"><button onclick="playBeep()">🔊 Testar</button><button onclick="skipRest()">Pular</button></div></div>`;
 }
 
 function openManage(){
