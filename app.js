@@ -7,6 +7,7 @@ let timer = null;
 let seconds = 0;
 let timerExerciseId = null;
 let completed = new Set();
+let audioContext = null;
 
 const colors = {
   Azul:"#007AFF", Amarelo:"#FFCC00", Roxo:"#AF52DE",
@@ -34,7 +35,7 @@ function render(){setTheme(); state.configured ? renderHome() : renderWelcome()}
 
 function renderWelcome(){
   app.innerHTML=`<section class="welcome">
-    <div class="logo">🌻</div>
+    <div class="logo">🏋️</div>
     <h1>Bem-vindo!</h1>
     <p>Monte seus treinos e acompanhe cada série.</p>
     <label class="label">Seu nome</label>
@@ -104,12 +105,64 @@ document.addEventListener("click",e=>{
   if(ex){startRest(ex.id,ex.rest)}
 });
 
-function startRest(exId,s){clearInterval(timer);timerExerciseId=exId;seconds=Number(s)||0;updateRest();timer=setInterval(()=>{if(seconds>0){seconds--;updateRest()}else clearInterval(timer)},1000)}
+function getAudioContext(){
+  if(!audioContext){
+    const Ctx=window.AudioContext||window.webkitAudioContext;
+    if(!Ctx)return null;
+    audioContext=new Ctx();
+  }
+  if(audioContext.state==='suspended') audioContext.resume().catch(()=>{});
+  return audioContext;
+}
+function playBeep(){
+  const ctx=getAudioContext(); if(!ctx)return;
+  const start=ctx.currentTime;
+  [0,0.22,0.44].forEach(delay=>{
+    const now=start+delay;
+    const osc=ctx.createOscillator();
+    const gain=ctx.createGain();
+    osc.type='sine';
+    osc.frequency.setValueAtTime(880,now);
+    gain.gain.setValueAtTime(0.0001,now);
+    gain.gain.exponentialRampToValueAtTime(0.22,now+0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001,now+0.18);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(now); osc.stop(now+0.2);
+  });
+}
+function startRest(exId,s){
+  clearInterval(timer);
+  timerExerciseId=exId;
+  seconds=Math.max(0,Number(s)||0);
+  getAudioContext();
+  updateRest();
+  if(seconds===0)return;
+  timer=setInterval(()=>{
+    if(seconds>0){
+      seconds--;
+      updateRest();
+      if(seconds===0){
+        clearInterval(timer);
+        timer=null;
+        playBeep();
+      }
+    }else{
+      clearInterval(timer);
+      timer=null;
+    }
+  },1000);
+}
+function skipRest(){
+  clearInterval(timer);
+  timer=null;
+  seconds=0;
+  updateRest();
+}
 function updateRest(){
   const box=document.querySelector("#rest-"+timerExerciseId); if(!box)return;
   if(seconds<=0){box.innerHTML="";return}
   const m=String(Math.floor(seconds/60)).padStart(2,"0"),s=String(seconds%60).padStart(2,"0");
-  box.innerHTML=`<div class="rest"><strong>Descanso ${m}:${s}</strong><button onclick="clearInterval(timer);seconds=0;updateRest()">Pular</button></div>`;
+  box.innerHTML=`<div class="rest"><strong>Descanso ${m}:${s}</strong><button onclick="skipRest()">Pular</button></div>`;
 }
 
 function openManage(){
