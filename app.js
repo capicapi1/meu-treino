@@ -1,3 +1,49 @@
+
+/* CAPI_STRONG_BEEP_V3 */
+let capiAudioCtx = null;
+let capiAudioReady = false;
+
+function capiInitAudio(){
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    if (!capiAudioCtx) capiAudioCtx = new AC();
+    if (capiAudioCtx.state === "suspended") capiAudioCtx.resume();
+    capiAudioReady = true;
+  } catch(e) {}
+}
+
+function capiTone(freq, duration=0.16, volume=0.95, delay=0){
+  if (!capiAudioCtx) return;
+  const t = capiAudioCtx.currentTime + delay;
+  const osc = capiAudioCtx.createOscillator();
+  const gain = capiAudioCtx.createGain();
+  osc.type = "square";
+  osc.frequency.setValueAtTime(freq, t);
+  gain.gain.setValueAtTime(0.0001, t);
+  gain.gain.exponentialRampToValueAtTime(volume, t + 0.012);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
+  osc.connect(gain);
+  gain.connect(capiAudioCtx.destination);
+  osc.start(t);
+  osc.stop(t + duration + 0.02);
+}
+
+function capiRestFinishedSound(){
+  capiInitAudio();
+  if (!capiAudioReady) return;
+  // Three attention beeps, followed by a longer, stronger final alert.
+  capiTone(1250, 0.13, 0.9, 0.00);
+  capiTone(1250, 0.13, 0.9, 0.20);
+  capiTone(1250, 0.13, 0.9, 0.40);
+  capiTone(900,  0.55, 1.0, 0.72);
+}
+
+// Unlock/resume Web Audio from a real user gesture.
+document.addEventListener("touchstart", capiInitAudio, {passive:true});
+document.addEventListener("pointerdown", capiInitAudio, {passive:true});
+document.addEventListener("click", capiInitAudio, {passive:true});
+
 const KEY = "meuTreinoStateV1";
 const PHOTO_DB = "meuTreinoPhotosV1";
 let state = loadState();
@@ -158,7 +204,7 @@ async function startRest(exId,s){
       if(seconds===0){
         clearInterval(timer);
         timer=null;
-        playBeep();
+        capiRestFinishedSound();
       }
     }else{
       clearInterval(timer);
