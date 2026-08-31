@@ -34,7 +34,7 @@ function render(){setTheme(); state.configured ? renderHome() : renderWelcome()}
 
 function renderWelcome(){
   app.innerHTML=`<section class="welcome">
-    <div class="logo">🏋️</div>
+    <div class="logo">🌻</div>
     <h1>Bem-vindo!</h1>
     <p>Monte seus treinos e acompanhe cada série.</p>
     <label class="label">Seu nome</label>
