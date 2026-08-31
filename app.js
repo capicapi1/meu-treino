@@ -1,4 +1,14 @@
 
+// Personalização da saudação
+function getGreeting(){
+  return localStorage.getItem("capiGreeting") || "Bem-vindo";
+}
+function saveGreeting(value){
+  const v = (value || "").trim();
+  localStorage.setItem("capiGreeting", v || "Bem-vindo");
+}
+
+
 /* CAPI_STRONG_BEEP_V3 */
 let capiAudioCtx = null;
 let capiAudioReady = false;
@@ -284,8 +294,15 @@ async function saveEditor(){
  saveState();closeModal();toast("Treino salvo");openManage();
 }
 function openSettings(){
- closeModal();
- showModal(`<div class="modal-header"><h2>Personalização</h2><button class="close" onclick="closeModal()">×</button></div>
+ if(document.getElementById("capi-greeting")) saveGreeting(document.getElementById("capi-greeting").value);
+    closeModal();
+ showModal(`
+<div class="setting-row">
+  <label for="capi-greeting">Saudação</label>
+  <input id="capi-greeting" type="text" maxlength="30"
+         value="${esc(getGreeting())}" placeholder="Bem-vindo">
+</div>
+<div class="modal-header"><h2>Personalização</h2><button class="close" onclick="closeModal()">×</button></div>
  <label class="label">Seu nome</label><input id="settingsName" type="text" value="${esc(state.userName)}">
  <div class="spacer"></div><label class="label">Cor principal</label>
  <div class="segmented">${Object.keys(colors).map(c=>`<button class="${state.theme===c?'active':''}" data-settings-theme="${c}">${c}</button>`).join("")}</div>
