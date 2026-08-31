@@ -109,7 +109,7 @@ function renderWelcome(){
 
 function renderHome(){
   app.innerHTML=`<header class="header">
-    <div class="header-copy"><h1>Bem-vindo, ${esc(state.userName||"Atleta")}</h1><p>Qual treino vamos fazer hoje?</p></div>
+    <div class="header-copy"><h1>${esc(getGreeting())}, ${esc(state.userName||"Atleta")}</h1><p>Qual treino vamos fazer hoje?</p></div>
     <button class="icon-btn" id="menuBtn">⚙️</button>
   </header>
   <section>${state.workouts.length?state.workouts.map(w=>`<button class="workout-card" data-workout="${w.id}">
@@ -294,22 +294,53 @@ async function saveEditor(){
  saveState();closeModal();toast("Treino salvo");openManage();
 }
 function openSettings(){
- if(document.getElementById("capi-greeting")) saveGreeting(document.getElementById("capi-greeting").value);
-    closeModal();
- showModal(`
-<div class="setting-row">
-  <label for="capi-greeting">Saudação</label>
-  <input id="capi-greeting" type="text" maxlength="30"
-         value="${esc(getGreeting())}" placeholder="Bem-vindo">
-</div>
-<div class="modal-header"><h2>Personalização</h2><button class="close" onclick="closeModal()">×</button></div>
- <label class="label">Seu nome</label><input id="settingsName" type="text" value="${esc(state.userName)}">
- <div class="spacer"></div><label class="label">Cor principal</label>
- <div class="segmented">${Object.keys(colors).map(c=>`<button class="${state.theme===c?'active':''}" data-settings-theme="${c}">${c}</button>`).join("")}</div>
- <div class="spacer"></div><button class="primary full" onclick="saveSettings()">Pronto</button>`);
- document.querySelectorAll("[data-settings-theme]").forEach(b=>b.onclick=()=>{state.theme=b.dataset.settingsTheme;saveState();openSettings()});
+  closeModal();
+  showModal(`
+    <div class="modal-header">
+      <h2>Personalização</h2>
+      <button class="close" onclick="closeModal()">×</button>
+    </div>
+
+    <label class="label">Saudação</label>
+    <input id="capi-greeting" type="text" maxlength="30"
+      value="${esc(getGreeting())}" placeholder="Bem-vindo">
+
+    <div class="spacer"></div>
+    <label class="label">Seu nome</label>
+    <input id="settingsName" type="text" value="${esc(state.userName)}">
+
+    <div class="spacer"></div>
+    <label class="label">Cor principal</label>
+    <div class="segmented">
+      ${Object.keys(colors).map(c=>`<button class="${state.theme===c?'active':''}" data-settings-theme="${c}">${c}</button>`).join("")}
+    </div>
+
+    <div class="spacer"></div>
+    <button class="primary full" onclick="saveSettings()">Aplicar</button>
+  `);
+
+  document.querySelectorAll("[data-settings-theme]").forEach(b=>{
+    b.onclick=()=>{
+      state.theme=b.dataset.settingsTheme;
+      setTheme();
+      document.querySelectorAll("[data-settings-theme]").forEach(x=>x.classList.remove("active"));
+      b.classList.add("active");
+    };
+  });
 }
-function saveSettings(){state.userName=(document.querySelector("#settingsName").value||"Atleta").trim()||"Atleta";saveState();closeModal();render()}
+
+function saveSettings(){
+  const greeting=(document.querySelector("#capi-greeting")?.value||"").trim() || "Bem-vindo";
+  const name=(document.querySelector("#settingsName")?.value||"").trim() || "Atleta";
+
+  saveGreeting(greeting);
+  state.userName=name;
+  saveState();
+
+  closeModal();
+  render();
+  toast("Personalização aplicada");
+}
 
 function fileToDataURL(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file)})}
 function photoDB(){return new Promise((resolve,reject)=>{const r=indexedDB.open(PHOTO_DB,1);r.onupgradeneeded=()=>r.result.createObjectStore("photos");r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}
