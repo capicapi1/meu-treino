@@ -1,3 +1,6 @@
+function getProfilePhoto(){return localStorage.getItem("capiProfilePhoto")||"";}
+function saveProfilePhoto(v){v?localStorage.setItem("capiProfilePhoto",v):localStorage.removeItem("capiProfilePhoto");}
+function profilePhotoMarkup(c="profile-photo"){const p=getProfilePhoto();return p?`<img class="${c}" src="${p}" alt="Foto de perfil">`:`<div class="${c} profile-placeholder"><span>+</span></div>`;}
 
 // Personalização da saudação
 function getGreeting(){
@@ -109,7 +112,7 @@ function renderWelcome(){
 
 function renderHome(){
   app.innerHTML=`<header class="header">
-    <div class="header-copy"><h1>${esc(getGreeting())}, ${esc(state.userName||"Atleta")}</h1><p>Qual treino vamos fazer hoje?</p></div>
+    <div class="header-copy"><div class="home-profile">${profilePhotoMarkup()}</div><h1>${esc(getGreeting())}, ${esc(state.userName||"Atleta")}</h1><p>Qual treino vamos fazer hoje?</p></div>
     <button class="icon-btn" id="menuBtn">⚙️</button>
   </header>
   <section>${state.workouts.length?state.workouts.map(w=>`<button class="workout-card" data-workout="${w.id}">
@@ -312,50 +315,43 @@ async function saveEditor(){
 function openSettings(){
   closeModal();
   showModal(`
-    <div class="modal-header">
-      <h2>Personalização</h2>
-      <button class="close" onclick="closeModal()">×</button>
+    <div class="modal-header"><h2>Personalização</h2><button class="close" onclick="closeModal()">×</button></div>
+    <div class="settings-profile">
+      <div class="settings-profile-photo">${profilePhotoMarkup("profile-photo settings-photo")}</div>
+      <label class="secondary-button profile-upload-label">
+        ${getProfilePhoto()?"Trocar foto":"Adicionar foto"}
+        <input id="profile-photo-input" type="file" accept="image/*" hidden>
+      </label>
+      ${getProfilePhoto()?'<button class="text-button" id="remove-profile-photo">Remover foto</button>':""}
     </div>
-
     <label class="label">Saudação</label>
-    <input id="capi-greeting" type="text" maxlength="30"
-      value="${esc(getGreeting())}" placeholder="Bem-vindo">
-
+    <input id="capi-greeting" type="text" maxlength="30" value="${esc(getGreeting())}" placeholder="Bem-vindo">
     <div class="spacer"></div>
     <label class="label">Seu nome</label>
     <input id="settingsName" type="text" value="${esc(state.userName)}">
-
     <div class="spacer"></div>
     <label class="label">Cor principal</label>
-    <div class="segmented">
-      ${Object.keys(colors).map(c=>`<button class="${state.theme===c?'active':''}" data-settings-theme="${c}">${c}</button>`).join("")}
-    </div>
-
+    <div class="segmented">${Object.keys(colors).map(c=>`<button class="${state.theme===c?'active':''}" data-settings-theme="${c}">${c}</button>`).join("")}</div>
     <div class="spacer"></div>
     <button class="primary full" onclick="saveSettings()">Aplicar</button>
   `);
-
-  document.querySelectorAll("[data-settings-theme]").forEach(b=>{
-    b.onclick=()=>{
-      state.theme=b.dataset.settingsTheme;
-      setTheme();
-      document.querySelectorAll("[data-settings-theme]").forEach(x=>x.classList.remove("active"));
-      b.classList.add("active");
-    };
+  document.querySelectorAll("[data-settings-theme]").forEach(b=>b.onclick=()=>{
+    state.theme=b.dataset.settingsTheme; setTheme();
+    document.querySelectorAll("[data-settings-theme]").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
   });
+  const input=document.querySelector("#profile-photo-input");
+  if(input) input.onchange=()=>{
+    const f=input.files?.[0]; if(!f||!f.type.startsWith("image/")) return;
+    const r=new FileReader(); r.onload=()=>{saveProfilePhoto(r.result);openSettings();}; r.readAsDataURL(f);
+  };
+  const rem=document.querySelector("#remove-profile-photo");
+  if(rem) rem.onclick=()=>{saveProfilePhoto("");openSettings();};
 }
-
 function saveSettings(){
-  const greeting=(document.querySelector("#capi-greeting")?.value||"").trim() || "Bem-vindo";
-  const name=(document.querySelector("#settingsName")?.value||"").trim() || "Atleta";
-
-  saveGreeting(greeting);
-  state.userName=name;
-  saveState();
-
-  closeModal();
-  render();
-  toast("Personalização aplicada");
+  saveGreeting((document.querySelector("#capi-greeting")?.value||"").trim()||"Bem-vindo");
+  state.userName=(document.querySelector("#settingsName")?.value||"").trim()||"Atleta";
+  saveState(); closeModal(); render(); toast("Personalização aplicada");
 }
 
 function fileToDataURL(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file)})}

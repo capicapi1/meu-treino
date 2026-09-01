@@ -48,3 +48,13 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-m
 .toast{position:fixed;left:50%;bottom:25px;transform:translate(-50%,20px);background:#222;color:white;padding:10px 15px;border-radius:12px;opacity:0;pointer-events:none;transition:.2s;z-index:50}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 @media(min-width:700px){#app{padding-top:40px}.modal-backdrop{align-items:center}.modal{border-radius:22px;max-height:90vh}}
+
+.home-profile{width:112px;height:112px;margin:8px auto 12px;display:flex;align-items:center;justify-content:center}
+.profile-photo{width:112px;height:112px;border-radius:50%;object-fit:cover;display:block}
+.profile-placeholder{border:3px dashed currentColor;opacity:.55;box-sizing:border-box;background:rgba(127,127,127,.08);display:flex;align-items:center;justify-content:center}
+.profile-placeholder span{font-size:38px;line-height:1}
+.settings-profile{display:flex;flex-direction:column;align-items:center;gap:8px;margin:4px 0 18px}
+.settings-profile-photo{width:112px;height:112px;display:flex;align-items:center;justify-content:center}
+.settings-photo{width:112px;height:112px}
+.profile-upload-label{cursor:pointer}
+.text-button{background:none;border:0;padding:4px 8px;font:inherit;color:#b00020}
