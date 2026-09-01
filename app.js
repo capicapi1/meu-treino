@@ -1,14 +1,60 @@
+
+// Idiomas — Português (Brasil) e English (UK)
+const LANG_KEY = "meuTreinoLanguageV1";
+const LANGS = {
+  pt: {
+    code: "pt-BR", name: "Português (Brasil)", greeting: "Bem-vindo",
+    welcome: "Bem-vindo!", welcomeSub: "Monte seus treinos e acompanhe cada série.", yourName: "Seu nome", namePlaceholder: "Seu nome", favouriteColour: "Cor favorita", start: "Começar",
+    settings: "Configurações", manageWorkouts: "Gerenciar treinos", personalisation: "Personalização",
+    todayWorkout: "Qual treino vamos fazer hoje?", exercise: "exercício", exercises: "exercícios", noneWorkouts: "Nenhum treino ainda.", finishWorkout: "Finalizar treino",
+    sets: "séries", reps: "repetições", kg: "kg", set: "Série", done: "Feita ✓", mark: "Marcar", rest: "Descanso", skip: "Pular",
+    editWorkout: "Editar treino", workoutName: "Nome do treino", name: "Nome", setsLabel: "Séries", repsLabel: "Repetições", weightLabel: "Carga (kg)", restLabel: "Descanso (s)", addExercise: "Adicionar exercício", save: "Salvar", delete: "Excluir",
+    newWorkout: "Novo treino", newExercise: "Novo exercício", deleteWorkoutConfirm: "Excluir este treino?",
+    deleteLastExercise: "O treino precisa ter pelo menos um exercício.", deleteExerciseConfirm: name => `Excluir o exercício "${name}"?\n\nEssa ação não pode ser desfeita.`,
+    photoExercise: "Foto do exercício", photoSaved: "Foto salva", profilePhoto: "Foto de perfil", changePhoto: "Trocar foto", addPhoto: "Adicionar foto", removePhoto: "Remover foto",
+    greetingLabel: "Saudação", greetingPlaceholder: "Bem-vindo", language: "Idioma", apply: "Aplicar", applied: "Personalização aplicada",
+    workoutSaved: "Treino salvo", athlete: "Atleta", profileAlt: "Foto de perfil", exercisePhotoAlt: "Foto do exercício",
+    colours: { Azul: "Azul", Amarelo: "Amarelo", Roxo: "Roxo", Verde: "Verde", Vermelho: "Vermelho", Rosa: "Rosa" }
+  },
+  en: {
+    code: "en-GB", name: "English (UK)", greeting: "Welcome",
+    welcome: "Welcome!", welcomeSub: "Build your workouts and track every set.", yourName: "Your name", namePlaceholder: "Your name", favouriteColour: "Favourite colour", start: "Get started",
+    settings: "Settings", manageWorkouts: "Manage workouts", personalisation: "Personalisation",
+    todayWorkout: "Which workout shall we do today?", exercise: "exercise", exercises: "exercises", noneWorkouts: "No workouts yet.", finishWorkout: "Finish workout",
+    sets: "sets", reps: "reps", kg: "kg", set: "Set", done: "Done ✓", mark: "Mark", rest: "Rest", skip: "Skip",
+    editWorkout: "Edit workout", workoutName: "Workout name", name: "Name", setsLabel: "Sets", repsLabel: "Reps", weightLabel: "Weight (kg)", restLabel: "Rest (s)", addExercise: "Add exercise", save: "Save", delete: "Delete",
+    newWorkout: "New workout", newExercise: "New exercise", deleteWorkoutConfirm: "Delete this workout?",
+    deleteLastExercise: "The workout must have at least one exercise.", deleteExerciseConfirm: name => `Delete the exercise "${name}"?\n\nThis action cannot be undone.`,
+    photoExercise: "Exercise photo", photoSaved: "Photo saved", profilePhoto: "Profile photo", changePhoto: "Change photo", addPhoto: "Add photo", removePhoto: "Remove photo",
+    greetingLabel: "Greeting", greetingPlaceholder: "Welcome", language: "Language", apply: "Apply", applied: "Personalisation applied",
+    workoutSaved: "Workout saved", athlete: "Athlete", profileAlt: "Profile photo", exercisePhotoAlt: "Exercise photo",
+    colours: { Azul: "Blue", Amarelo: "Yellow", Roxo: "Purple", Verde: "Green", Vermelho: "Red", Rosa: "Pink" }
+  }
+};
+function getLanguage(){ return localStorage.getItem(LANG_KEY) === "en" ? "en" : "pt"; }
+function setLanguage(v){ localStorage.setItem(LANG_KEY, v === "en" ? "en" : "pt"); }
+function t(key){ const v=LANGS[getLanguage()][key]; return typeof v === "function" ? v(...Array.prototype.slice.call(arguments,1)) : (v ?? key); }
+function colourName(c){ return LANGS[getLanguage()].colours[c] || c; }
+function updateDocumentLanguage(){ document.documentElement.lang=LANGS[getLanguage()].code; }
+function defaultGreetingFor(lang){ return LANGS[lang].greeting; }
+
 function getProfilePhoto(){return localStorage.getItem("capiProfilePhoto")||"";}
 function saveProfilePhoto(v){v?localStorage.setItem("capiProfilePhoto",v):localStorage.removeItem("capiProfilePhoto");}
-function profilePhotoMarkup(c="profile-photo"){const p=getProfilePhoto();return p?`<img class="${c}" src="${p}" alt="Foto de perfil">`:`<div class="${c} profile-placeholder"><span>+</span></div>`;}
+function profilePhotoMarkup(c="profile-photo"){const p=getProfilePhoto();return p?`<img class="${c}" src="${p}" alt="${t("profileAlt")}">`:`<div class="${c} profile-placeholder"><span>+</span></div>`;}
 
 // Personalização da saudação
 function getGreeting(){
-  return localStorage.getItem("capiGreeting") || "Bem-vindo";
+  const saved=localStorage.getItem("capiGreeting");
+  if(saved) return saved;
+  return t("greeting");
 }
 function saveGreeting(value){
-  const v = (value || "").trim();
-  localStorage.setItem("capiGreeting", v || "Bem-vindo");
+  const v=(value||"").trim();
+  localStorage.setItem("capiGreeting", v || t("greeting"));
+}
+function syncDefaultGreeting(oldLang,newLang){
+  const saved=localStorage.getItem("capiGreeting");
+  if(!saved || saved===defaultGreetingFor(oldLang)) localStorage.setItem("capiGreeting",defaultGreetingFor(newLang));
 }
 
 
@@ -90,43 +136,46 @@ function accent(){return colors[state.theme]||colors.Azul}
 function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
 function toast(msg){const t=document.querySelector("#toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1800)}
 function setTheme(){document.documentElement.style.setProperty("--accent",accent())}
-function render(){setTheme(); state.configured ? renderHome() : renderWelcome()}
+function render(){updateDocumentLanguage();setTheme(); state.configured ? renderHome() : renderWelcome()}
 
 function renderWelcome(){
+  updateDocumentLanguage();
   app.innerHTML=`<section class="welcome">
     <div class="logo">🏋️</div>
-    <h1>Bem-vindo!</h1>
-    <p>Monte seus treinos e acompanhe cada série.</p>
-    <label class="label">Seu nome</label>
-    <input id="welcomeName" type="text" placeholder="Seu nome" value="${esc(state.userName)}">
-    <label class="label">Cor favorita</label>
-    <div class="segmented">${Object.keys(colors).map(c=>`<button class="${state.theme===c?'active':''}" data-theme="${c}">${c}</button>`).join("")}</div>
-    <button class="primary full" id="start">Começar</button>
+    <h1>${t("welcome")}</h1>
+    <p>${t("welcomeSub")}</p>
+    <label class="label">${t("yourName")}</label>
+    <input id="welcomeName" type="text" placeholder="${t("namePlaceholder")}" value="${esc(state.userName)}">
+    <label class="label">${t("favouriteColour")}</label>
+    <div class="segmented">${Object.keys(colors).map(c=>`<button class="${state.theme===c?'active':''}" data-theme="${c}">${colourName(c)}</button>`).join("")}</div>
+    <label class="label">${t("language")}</label>
+    <div class="segmented language-picker">${["pt","en"].map(l=>`<button class="${getLanguage()===l?'active':''}" data-language="${l}">${LANGS[l].name}</button>`).join("")}</div>
+    <button class="primary full" id="start">${t("start")}</button>
   </section>`;
   document.querySelectorAll("[data-theme]").forEach(b=>b.onclick=()=>{state.theme=b.dataset.theme;saveState();renderWelcome();});
+  document.querySelectorAll("[data-language]").forEach(b=>b.onclick=()=>{const old=getLanguage();setLanguage(b.dataset.language);syncDefaultGreeting(old,getLanguage());renderWelcome();});
   document.querySelector("#start").onclick=()=>{
-    state.userName=(document.querySelector("#welcomeName").value||"Atleta").trim();
-    if(!state.userName)state.userName="Atleta"; state.configured=true; saveState(); render();
+    state.userName=(document.querySelector("#welcomeName").value||t("athlete")).trim();
+    if(!state.userName)state.userName=t("athlete"); state.configured=true; saveState(); render();
   };
 }
-
 function renderHome(){
   app.innerHTML=`<header class="header">
-    <div class="header-copy"><div class="home-profile">${profilePhotoMarkup()}</div><h1>${esc(getGreeting())}, ${esc(state.userName||"Atleta")}</h1><p>Qual treino vamos fazer hoje?</p></div>
+    <div class="header-copy"><div class="home-profile">${profilePhotoMarkup()}</div><h1>${esc(getGreeting())}, ${esc(state.userName||t("athlete"))}</h1><p>${t("todayWorkout")}</p></div>
     <button class="icon-btn" id="menuBtn">⚙️</button>
   </header>
   <section>${state.workouts.length?state.workouts.map(w=>`<button class="workout-card" data-workout="${w.id}">
-    <span class="dumbbell">🏋️</span><span class="name">${esc(w.name)}</span><span class="count">${w.exercises.length} exercício${w.exercises.length===1?'':'s'}</span>
-  </button>`).join(""):`<div class="empty">Nenhum treino ainda.</div>`}</section>`;
+    <span class="dumbbell">🏋️</span><span class="name">${esc(w.name)}</span><span class="count">${w.exercises.length} ${w.exercises.length===1?t("exercise"):t("exercises")}</span>
+  </button>`).join(""):`<div class="empty">${t("noneWorkouts")}</div>`}</section>`;
   document.querySelectorAll("[data-workout]").forEach(b=>b.onclick=()=>openSession(b.dataset.workout));
   document.querySelector("#menuBtn").onclick=openMenu;
 }
 
 function openMenu(){
-  showModal(`<div class="modal-header"><h2>Configurações</h2><button class="close" onclick="closeModal()">×</button></div>
-    <button class="secondary full" onclick="openManage()">Gerenciar treinos</button>
+  showModal(`<div class="modal-header"><h2>${t("settings")}</h2><button class="close" onclick="closeModal()">×</button></div>
+    <button class="secondary full" onclick="openManage()">${t("manageWorkouts")}</button>
     <div class="spacer"></div>
-    <button class="secondary full" onclick="openSettings()">Personalização</button>`);
+    <button class="secondary full" onclick="openSettings()">${t("personalisation")}</button>`);
 }
 
 function showModal(content){let x=document.createElement("div");x.id="modal";x.className="modal-backdrop";x.innerHTML=`<div class="modal">${content}</div>`;document.body.appendChild(x)}
@@ -137,16 +186,16 @@ function openSession(id){
   currentWorkoutId=id; completed=new Set(); seconds=0; timerExerciseId=null;
   showModal(`<div class="modal-header"><h2>${esc(w.name)}</h2><button class="close" onclick="closeModal()">×</button></div>
   ${w.exercises.map(ex=>exerciseHTML(ex)).join("")}
-  <button class="primary full" onclick="closeModal()">Finalizar treino</button>`);
+  <button class="primary full" onclick="closeModal()">${t("finishWorkout")}</button>`);
   hydratePhotos();
 }
 function exerciseHTML(ex){
   return `<article class="exercise">
     <h3>${esc(ex.name)}</h3>
     <div id="photo-${ex.id}"></div>
-    <div class="meta">${ex.sets} séries • ${ex.reps} repetições • ${ex.weight} kg</div>
+    <div class="meta">${ex.sets} ${t("sets")} • ${ex.reps} ${t("reps")} • ${ex.weight} ${t("kg")}</div>
     <div id="rest-${ex.id}"></div>
-    ${Array.from({length:ex.sets},(_,i)=>{const k=ex.id+"-"+(i+1);return `<button class="set-btn ${completed.has(k)?'done':''}" data-set="${k}" data-ex="${ex.id}"><span>Série ${i+1}</span><span>${completed.has(k)?"Feita ✓":"Marcar"}</span></button>`}).join("")}
+    ${Array.from({length:ex.sets},(_,i)=>{const k=ex.id+"-"+(i+1);return `<button class="set-btn ${completed.has(k)?'done':''}" data-set="${k}" data-ex="${ex.id}"><span>${t("set")} ${i+1}</span><span>${completed.has(k)?t("done"):t("mark")}</span></button>`}).join("")}
   </article>`;
 }
 async function hydratePhotos(){
@@ -159,7 +208,7 @@ async function hydratePhotos(){
 document.addEventListener("click",async e=>{
   const b=e.target.closest("[data-set]"); if(!b)return;
   const [eid,set]=b.dataset.set.split("-");
-  completed.add(b.dataset.set); b.classList.add("done"); b.querySelector("span:last-child").textContent="Feita ✓";
+  completed.add(b.dataset.set); b.classList.add("done"); b.querySelector("span:last-child").textContent=t("done");
   const w=state.workouts.find(x=>x.id===currentWorkoutId), ex=w?.exercises.find(x=>x.id===b.dataset.ex);
   if(ex){await startRest(ex.id,ex.rest)}
 });
@@ -235,45 +284,45 @@ function updateRest(){
   const box=document.querySelector("#rest-"+timerExerciseId); if(!box)return;
   if(seconds<=0){box.innerHTML="";return}
   const m=String(Math.floor(seconds/60)).padStart(2,"0"),s=String(seconds%60).padStart(2,"0");
-  box.innerHTML=`<div class="rest"><strong>Descanso ${m}:${s}</strong><div class="rest-actions"><button onclick="skipRest()">Pular</button></div></div>`;
+  box.innerHTML=`<div class="rest"><strong>${t("rest")} ${m}:${s}</strong><div class="rest-actions"><button onclick="skipRest()">${t("skip")}</button></div></div>`;
 }
 
 function openManage(){
   closeModal();
-  showModal(`<div class="modal-header"><h2>Gerenciar treinos</h2><button class="close" onclick="closeModal()">×</button></div>
-    <div id="workoutList">${state.workouts.map(w=>`<div class="list-row"><button onclick="openEditor('${w.id}')">${esc(w.name)}</button><button class="secondary danger" onclick="deleteWorkout('${w.id}')">Excluir</button></div>`).join("")}</div>
-    <div class="spacer"></div><button class="primary full" onclick="addWorkout()">Adicionar treino</button>`);
+  showModal(`<div class="modal-header"><h2>${t("manageWorkouts")}</h2><button class="close" onclick="closeModal()">×</button></div>
+    <div id="workoutList">${state.workouts.map(w=>`<div class="list-row"><button onclick="openEditor('${w.id}')">${esc(w.name)}</button><button class="secondary danger" onclick="deleteWorkout('${w.id}')">${t("delete")}</button></div>`).join("")}</div>
+    <div class="spacer"></div><button class="primary full" onclick="addWorkout()">${t("newWorkout")}</button>`);
 }
 function addWorkout(){
-  const w={id:uid(),name:"Novo treino",exercises:[{id:uid(),name:"Novo exercício",sets:3,reps:12,weight:0,rest:60,photoKey:uid()}]};
+  const w={id:uid(),name:t("newWorkout"),exercises:[{id:uid(),name:t("newExercise"),sets:3,reps:12,weight:0,rest:60,photoKey:uid()}]};
   state.workouts.push(w);saveState();openEditor(w.id);
 }
-function deleteWorkout(id){if(!confirm("Excluir este treino?"))return;state.workouts=state.workouts.filter(w=>w.id!==id);saveState();openManage()}
+function deleteWorkout(id){if(!confirm(t("deleteWorkoutConfirm")))return;state.workouts=state.workouts.filter(w=>w.id!==id);saveState();openManage()}
 
 function openEditor(id){
   const w=state.workouts.find(x=>x.id===id);if(!w)return;currentEditorId=id;
-  showModal(`<div class="modal-header"><h2>Editar treino</h2><button class="close" onclick="closeModal()">×</button></div>
-    <label class="label">Nome do treino</label><input id="editWorkoutName" type="text" value="${esc(w.name)}">
+  showModal(`<div class="modal-header"><h2>${t("editWorkout")}</h2><button class="close" onclick="closeModal()">×</button></div>
+    <label class="label">${t("workoutName")}</label><input id="editWorkoutName" type="text" value="${esc(w.name)}">
     <div id="editorExercises">${w.exercises.map(editorExerciseHTML).join("")}</div>
-    <div class="actions"><button class="secondary" onclick="addExercise()">Adicionar exercício</button><button class="primary" onclick="saveEditor()">Salvar</button></div>`);
+    <div class="actions"><button class="secondary" onclick="addExercise()">${t("addExercise")}</button><button class="primary" onclick="saveEditor()">${t("save")}</button></div>`);
 }
 function editorExerciseHTML(ex){
  return `<section class="form-section" data-editor-ex="${ex.id}">
    <h3>${esc(ex.name)}</h3>
-   <label class="label">Nome</label><input class="ex-name" type="text" value="${esc(ex.name)}">
-   <button class="secondary danger full delete-exercise" onclick="deleteExercise('${ex.id}')">🗑️ Excluir exercício</button>
-   <label class="label">Foto do exercício</label><input class="photo-input" type="file" accept="image/*" data-photo="${ex.photoKey}">
+   <label class="label">${t("name")}</label><input class="ex-name" type="text" value="${esc(ex.name)}">
+   <button class="secondary danger full delete-exercise" onclick="deleteExercise('${ex.id}')">🗑️ ${t("delete")} ${t("exercise")}</button>
+   <label class="label">${t("photoExercise")}</label><input class="photo-input" type="file" accept="image/*" data-photo="${ex.photoKey}">
    <div id="preview-${ex.id}"></div>
    <div class="form-row">
-    <div><label class="label">Séries</label><input class="ex-sets" type="number" min="1" max="10" value="${ex.sets}"></div>
-    <div><label class="label">Repetições</label><input class="ex-reps" type="number" min="1" max="50" value="${ex.reps}"></div>
-    <div><label class="label">Carga (kg)</label><input class="ex-weight" type="number" min="0" max="300" value="${ex.weight}"></div>
-    <div><label class="label">Descanso (s)</label><input class="ex-rest" type="number" min="0" max="300" step="15" value="${ex.rest}"></div>
+    <div><label class="label">${t("setsLabel")}</label><input class="ex-sets" type="number" min="1" max="10" value="${ex.sets}"></div>
+    <div><label class="label">${t("repsLabel")}</label><input class="ex-reps" type="number" min="1" max="50" value="${ex.reps}"></div>
+    <div><label class="label">${t("weightLabel")}</label><input class="ex-weight" type="number" min="0" max="300" value="${ex.weight}"></div>
+    <div><label class="label">${t("restLabel")}</label><input class="ex-rest" type="number" min="0" max="300" step="15" value="${ex.rest}"></div>
    </div>
  </section>`;
 }
 async function addExercise(){
- const w=state.workouts.find(x=>x.id===currentEditorId);w.exercises.push({id:uid(),name:"Novo exercício",sets:3,reps:12,weight:0,rest:60,photoKey:uid()});openEditor(w.id);
+ const w=state.workouts.find(x=>x.id===currentEditorId);w.exercises.push({id:uid(),name:t("newExercise"),sets:3,reps:12,weight:0,rest:60,photoKey:uid()});openEditor(w.id);
 }
 function deleteExercise(id){
  const w=state.workouts.find(x=>x.id===currentEditorId);
@@ -281,14 +330,14 @@ function deleteExercise(id){
  const ex=w.exercises.find(x=>x.id===id);
  if(!ex)return;
  if(w.exercises.length<=1){
-   alert("O treino precisa ter pelo menos um exercício.");
+   alert(t("deleteLastExercise"));
    return;
  }
- if(!confirm(`Excluir o exercício "${ex.name}"?\n\nEssa ação não pode ser desfeita.`))return;
+ if(!confirm(t("deleteExerciseConfirm", ex.name)))return;
  w.exercises=w.exercises.filter(x=>x.id!==id);
  saveState();
  openEditor(w.id);
- toast("Exercício excluído");
+ toast(`${t("delete")} ${t("exercise")}`);
 }
 document.addEventListener("change",async e=>{
  const input=e.target.closest(".photo-input");if(!input||!input.files[0])return;
@@ -296,49 +345,55 @@ document.addEventListener("change",async e=>{
  await savePhoto(input.dataset.photo,data);
  const sec=input.closest("[data-editor-ex]");
  const preview=sec?.querySelector("#preview-"+sec.dataset.editorEx);
- if(preview) preview.innerHTML=`<img class="photo-preview" src="${data}" alt="Foto do exercício">`;
- toast("Foto salva");
+ if(preview) preview.innerHTML=`<img class="photo-preview" src="${data}" alt="${t("exercisePhotoAlt")}">`;
+ toast(t("photoSaved"));
 });
 async function saveEditor(){
  const w=state.workouts.find(x=>x.id===currentEditorId);if(!w)return;
- w.name=document.querySelector("#editWorkoutName").value.trim()||"Novo treino";
+ w.name=document.querySelector("#editWorkoutName").value.trim()||t("newWorkout");
  document.querySelectorAll("[data-editor-ex]").forEach(sec=>{
   const ex=w.exercises.find(x=>x.id===sec.dataset.editorEx);if(!ex)return;
-  ex.name=sec.querySelector(".ex-name").value.trim()||"Novo exercício";
+  ex.name=sec.querySelector(".ex-name").value.trim()||t("newExercise");
   ex.sets=Math.max(1,Number(sec.querySelector(".ex-sets").value)||1);
   ex.reps=Math.max(1,Number(sec.querySelector(".ex-reps").value)||1);
   ex.weight=Math.max(0,Number(sec.querySelector(".ex-weight").value)||0);
   ex.rest=Math.max(0,Number(sec.querySelector(".ex-rest").value)||0);
  });
- saveState();closeModal();toast("Treino salvo");openManage();
+ saveState();closeModal();toast(t("workoutSaved"));openManage();
 }
 function openSettings(){
   closeModal();
   showModal(`
-    <div class="modal-header"><h2>Personalização</h2><button class="close" onclick="closeModal()">×</button></div>
+    <div class="modal-header"><h2>${t("personalisation")}</h2><button class="close" onclick="closeModal()">×</button></div>
     <div class="settings-profile">
       <div class="settings-profile-photo">${profilePhotoMarkup("profile-photo settings-photo")}</div>
       <label class="secondary-button profile-upload-label">
-        ${getProfilePhoto()?"Trocar foto":"Adicionar foto"}
+        ${getProfilePhoto()?t("changePhoto"):t("addPhoto")}
         <input id="profile-photo-input" type="file" accept="image/*" hidden>
       </label>
-      ${getProfilePhoto()?'<button class="text-button" id="remove-profile-photo">Remover foto</button>':""}
+      ${getProfilePhoto()?`<button class="text-button" id="remove-profile-photo">${t("removePhoto")}</button>`:""}
     </div>
-    <label class="label">Saudação</label>
-    <input id="capi-greeting" type="text" maxlength="30" value="${esc(getGreeting())}" placeholder="Bem-vindo">
+    <label class="label">${t("greetingLabel")}</label>
+    <input id="capi-greeting" type="text" maxlength="30" value="${esc(getGreeting())}" placeholder="${t("greetingPlaceholder")}">
     <div class="spacer"></div>
-    <label class="label">Seu nome</label>
+    <label class="label">${t("yourName")}</label>
     <input id="settingsName" type="text" value="${esc(state.userName)}">
     <div class="spacer"></div>
-    <label class="label">Cor principal</label>
-    <div class="segmented">${Object.keys(colors).map(c=>`<button class="${state.theme===c?'active':''}" data-settings-theme="${c}">${c}</button>`).join("")}</div>
+    <label class="label">${t("favouriteColour")}</label>
+    <div class="segmented">${Object.keys(colors).map(c=>`<button class="${state.theme===c?'active':''}" data-settings-theme="${c}">${colourName(c)}</button>`).join("")}</div>
     <div class="spacer"></div>
-    <button class="primary full" onclick="saveSettings()">Aplicar</button>
+    <label class="label">${t("language")}</label>
+    <div class="segmented language-picker">${["pt","en"].map(l=>`<button class="${getLanguage()===l?'active':''}" data-settings-language="${l}">${LANGS[l].name}</button>`).join("")}</div>
+    <div class="spacer"></div>
+    <button class="primary full" onclick="saveSettings()">${t("apply")}</button>
   `);
   document.querySelectorAll("[data-settings-theme]").forEach(b=>b.onclick=()=>{
     state.theme=b.dataset.settingsTheme; setTheme();
     document.querySelectorAll("[data-settings-theme]").forEach(x=>x.classList.remove("active"));
     b.classList.add("active");
+  });
+  document.querySelectorAll("[data-settings-language]").forEach(b=>b.onclick=()=>{
+    const old=getLanguage(); setLanguage(b.dataset.settingsLanguage); syncDefaultGreeting(old,getLanguage()); openSettings();
   });
   const input=document.querySelector("#profile-photo-input");
   if(input) input.onchange=()=>{
@@ -348,10 +403,11 @@ function openSettings(){
   const rem=document.querySelector("#remove-profile-photo");
   if(rem) rem.onclick=()=>{saveProfilePhoto("");openSettings();};
 }
+
 function saveSettings(){
-  saveGreeting((document.querySelector("#capi-greeting")?.value||"").trim()||"Bem-vindo");
-  state.userName=(document.querySelector("#settingsName")?.value||"").trim()||"Atleta";
-  saveState(); closeModal(); render(); toast("Personalização aplicada");
+  saveGreeting((document.querySelector("#capi-greeting")?.value||"").trim()||t("greeting"));
+  state.userName=(document.querySelector("#settingsName")?.value||"").trim()||t("athlete");
+  saveState(); closeModal(); render(); toast(t("applied"));
 }
 
 function fileToDataURL(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file)})}
