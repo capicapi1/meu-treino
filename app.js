@@ -232,7 +232,7 @@ function updateRest(){
   const box=document.querySelector("#rest-"+timerExerciseId); if(!box)return;
   if(seconds<=0){box.innerHTML="";return}
   const m=String(Math.floor(seconds/60)).padStart(2,"0"),s=String(seconds%60).padStart(2,"0");
-  box.innerHTML=`<div class="rest"><strong>Descanso ${m}:${s}</strong><div class="rest-actions"><button onclick="playBeep()">🔊 Testar</button><button onclick="skipRest()">Pular</button></div></div>`;
+  box.innerHTML=`<div class="rest"><strong>Descanso ${m}:${s}</strong><div class="rest-actions"><button onclick="skipRest()">Pular</button></div></div>`;
 }
 
 function openManage(){
@@ -258,6 +258,7 @@ function editorExerciseHTML(ex){
  return `<section class="form-section" data-editor-ex="${ex.id}">
    <h3>${esc(ex.name)}</h3>
    <label class="label">Nome</label><input class="ex-name" type="text" value="${esc(ex.name)}">
+   <button class="secondary danger full delete-exercise" onclick="deleteExercise('${ex.id}')">🗑️ Excluir exercício</button>
    <label class="label">Foto do exercício</label><input class="photo-input" type="file" accept="image/*" data-photo="${ex.photoKey}">
    <div id="preview-${ex.id}"></div>
    <div class="form-row">
@@ -270,6 +271,21 @@ function editorExerciseHTML(ex){
 }
 async function addExercise(){
  const w=state.workouts.find(x=>x.id===currentEditorId);w.exercises.push({id:uid(),name:"Novo exercício",sets:3,reps:12,weight:0,rest:60,photoKey:uid()});openEditor(w.id);
+}
+function deleteExercise(id){
+ const w=state.workouts.find(x=>x.id===currentEditorId);
+ if(!w)return;
+ const ex=w.exercises.find(x=>x.id===id);
+ if(!ex)return;
+ if(w.exercises.length<=1){
+   alert("O treino precisa ter pelo menos um exercício.");
+   return;
+ }
+ if(!confirm(`Excluir o exercício "${ex.name}"?\n\nEssa ação não pode ser desfeita.`))return;
+ w.exercises=w.exercises.filter(x=>x.id!==id);
+ saveState();
+ openEditor(w.id);
+ toast("Exercício excluído");
 }
 document.addEventListener("change",async e=>{
  const input=e.target.closest(".photo-input");if(!input||!input.files[0])return;
