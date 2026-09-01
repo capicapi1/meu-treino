@@ -3,7 +3,7 @@
 const LANG_KEY = "meuTreinoLanguageV1";
 const LANGS = {
   pt: {
-    code: "pt-BR", name: "Português (Brasil)", greeting: "Bem-vindo",
+    code: "pt-BR", languageName: "Português", greeting: "Bem-vindo",
     welcome: "Bem-vindo!", welcomeSub: "Monte seus treinos e acompanhe cada série.", yourName: "Seu nome", namePlaceholder: "Seu nome", favouriteColour: "Cor favorita", start: "Começar",
     settings: "Configurações", manageWorkouts: "Gerenciar treinos", personalisation: "Personalização",
     todayWorkout: "Qual treino vamos fazer hoje?", exercise: "exercício", exercises: "exercícios", noneWorkouts: "Nenhum treino ainda.", finishWorkout: "Finalizar treino",
@@ -17,7 +17,7 @@ const LANGS = {
     colours: { Azul: "Azul", Amarelo: "Amarelo", Roxo: "Roxo", Verde: "Verde", Vermelho: "Vermelho", Rosa: "Rosa" }
   },
   en: {
-    code: "en-GB", name: "English (UK)", greeting: "Welcome",
+    code: "en-GB", languageName: "English", greeting: "Welcome",
     welcome: "Welcome!", welcomeSub: "Build your workouts and track every set.", yourName: "Your name", namePlaceholder: "Your name", favouriteColour: "Favourite colour", start: "Get started",
     settings: "Settings", manageWorkouts: "Manage workouts", personalisation: "Personalisation",
     todayWorkout: "Which workout shall we do today?", exercise: "exercise", exercises: "exercises", noneWorkouts: "No workouts yet.", finishWorkout: "Finish workout",
@@ -149,7 +149,7 @@ function renderWelcome(){
     <label class="label">${t("favouriteColour")}</label>
     <div class="segmented">${Object.keys(colors).map(c=>`<button class="${state.theme===c?'active':''}" data-theme="${c}">${colourName(c)}</button>`).join("")}</div>
     <label class="label">${t("language")}</label>
-    <div class="segmented language-picker">${["pt","en"].map(l=>`<button class="${getLanguage()===l?'active':''}" data-language="${l}">${LANGS[l].name}</button>`).join("")}</div>
+    <div class="segmented language-picker">${["pt","en"].map(l=>`<button class="${getLanguage()===l?'active':''}" data-language="${l}">${LANGS[l].languageName}</button>`).join("")}</div>
     <button class="primary full" id="start">${t("start")}</button>
   </section>`;
   document.querySelectorAll("[data-theme]").forEach(b=>b.onclick=()=>{state.theme=b.dataset.theme;saveState();renderWelcome();});
@@ -383,7 +383,7 @@ function openSettings(){
     <div class="segmented">${Object.keys(colors).map(c=>`<button class="${state.theme===c?'active':''}" data-settings-theme="${c}">${colourName(c)}</button>`).join("")}</div>
     <div class="spacer"></div>
     <label class="label">${t("language")}</label>
-    <div class="segmented language-picker">${["pt","en"].map(l=>`<button class="${getLanguage()===l?'active':''}" data-settings-language="${l}">${LANGS[l].name}</button>`).join("")}</div>
+    <div class="segmented language-picker">${["pt","en"].map(l=>`<button class="${getLanguage()===l?'active':''}" data-settings-language="${l}">${LANGS[l].languageName}</button>`).join("")}</div>
     <div class="spacer"></div>
     <button class="primary full" onclick="saveSettings()">${t("apply")}</button>
   `);
