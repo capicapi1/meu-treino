@@ -12,7 +12,7 @@ const LANGS = {
     newWorkout: "Novo treino", newExercise: "Novo exercício", deleteWorkoutConfirm: "Excluir este treino?",
     deleteLastExercise: "O treino precisa ter pelo menos um exercício.", deleteExerciseConfirm: name => `Excluir o exercício "${name}"?\n\nEssa ação não pode ser desfeita.`,
     photoExercise: "Foto do exercício", photoSaved: "Foto salva", profilePhoto: "Foto de perfil", changePhoto: "Trocar foto", addPhoto: "Adicionar foto", removePhoto: "Remover foto",
-    greetingLabel: "Saudação", greetingPlaceholder: "Bem-vindo", language: "Idioma", apply: "Aplicar", applied: "Personalização aplicada",
+    greetingLabel: "Saudação", greetingPlaceholder: "Bem-vindo", language: "Idioma", apply: "Aplicar", applied: "Personalização aplicada", exportData: "Exportar treinos", importData: "Importar treinos", dataExported: "Treinos exportados", dataImported: "Treinos importados", importError: "Arquivo inválido.",
     workoutSaved: "Treino salvo", athlete: "Atleta", profileAlt: "Foto de perfil", exercisePhotoAlt: "Foto do exercício",
     colours: { Azul: "Azul", Amarelo: "Amarelo", Roxo: "Roxo", Verde: "Verde", Vermelho: "Vermelho", Rosa: "Rosa" }
   },
@@ -26,7 +26,7 @@ const LANGS = {
     newWorkout: "New workout", newExercise: "New exercise", deleteWorkoutConfirm: "Delete this workout?",
     deleteLastExercise: "The workout must have at least one exercise.", deleteExerciseConfirm: name => `Delete the exercise "${name}"?\n\nThis action cannot be undone.`,
     photoExercise: "Exercise photo", photoSaved: "Photo saved", profilePhoto: "Profile photo", changePhoto: "Change photo", addPhoto: "Add photo", removePhoto: "Remove photo",
-    greetingLabel: "Greeting", greetingPlaceholder: "Welcome", language: "Language", apply: "Apply", applied: "Personalisation applied",
+    greetingLabel: "Greeting", greetingPlaceholder: "Welcome", language: "Language", apply: "Apply", applied: "Personalisation applied", exportData: "Export workouts", importData: "Import workouts", dataExported: "Workouts exported", dataImported: "Workouts imported", importError: "Invalid file."
     workoutSaved: "Workout saved", athlete: "Athlete", profileAlt: "Profile photo", exercisePhotoAlt: "Exercise photo",
     colours: { Azul: "Blue", Amarelo: "Yellow", Roxo: "Purple", Verde: "Green", Vermelho: "Red", Rosa: "Pink" }
   }
@@ -384,7 +384,15 @@ function openSettings(){
     <div class="spacer"></div>
     <label class="label">${t("language")}</label>
     <div class="segmented language-picker">${["pt","en"].map(l=>`<button class="${getLanguage()===l?'active':''}" data-settings-language="${l}">${LANGS[l].languageName}</button>`).join("")}</div>
-    <div class="spacer"></div>
+    <div class="spacer"></div>   
+   <button class="secondary full" onclick="exportWorkoutData()">${t("exportData")}</button>
+   <div class="spacer"></div>
+   <label class="secondary-button full" style="display:block;text-align:center;box-sizing:border-box;cursor:pointer">
+     ${t("importData")}
+     <input id="import-workout-data" type="file" accept=".json,application/json" hidden>
+   </label>
+   <div class="spacer"></div>
+
     <button class="primary full" onclick="saveSettings()">${t("apply")}</button>
   `);
   document.querySelectorAll("[data-settings-theme]").forEach(b=>b.onclick=()=>{
@@ -402,12 +410,92 @@ function openSettings(){
   };
   const rem=document.querySelector("#remove-profile-photo");
   if(rem) rem.onclick=()=>{saveProfilePhoto("");openSettings();};
+   const importInput=document.querySelector("#import-workout-data");
+   if(importInput) importInput.onchange=async()=>{
+     const file=importInput.files?.[0];
+     if(file) await importWorkoutData(file);
+   };
 }
 
 function saveSettings(){
   saveGreeting((document.querySelector("#capi-greeting")?.value||"").trim()||t("greeting"));
   state.userName=(document.querySelector("#settingsName")?.value||"").trim()||t("athlete");
   saveState(); closeModal(); render(); toast(t("applied"));
+}
+
+async function exportWorkoutData(){
+  try{
+    const photos={};
+    for(const w of state.workouts||[]){
+      for(const ex of w.exercises||[]){
+        if(ex.photoKey && !photos[ex.photoKey]){
+          const data=await getPhoto(ex.photoKey);
+          if(data) photos[ex.photoKey]=data;
+        }
+      }
+    }
+    const payload={
+      format:"meuTreino",
+      version:2,
+      exportedAt:new Date().toISOString(),
+      state:JSON.parse(JSON.stringify(state)),
+      photos
+    };
+    const blob=new Blob([JSON.stringify(payload)],{type:"application/json"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url;
+    a.download="meu-treino.json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    toast(t("dataExported"));
+  }catch(e){
+    console.error("Export failed:",e);
+    alert(t("importError"));
+  }
+}
+
+async function importWorkoutData(file){
+  try{
+    const payload=JSON.parse(await file.text());
+    let importedState=null;
+    let importedPhotos={};
+
+    if(payload && payload.format==="meuTreino" && payload.state){
+      importedState=payload.state;
+      importedPhotos=payload.photos||{};
+    }else if(payload && Array.isArray(payload.workouts)){
+      importedState=payload;
+      importedPhotos=payload.photos||{};
+    }
+
+    if(!importedState || !Array.isArray(importedState.workouts)){
+      throw new Error("Invalid workout file");
+    }
+
+    state={
+      configured: importedState.configured ?? true,
+      userName: importedState.userName ?? state.userName ?? "",
+      theme: importedState.theme ?? state.theme ?? "Azul",
+      workouts: importedState.workouts
+    };
+    saveState();
+
+    for(const [key,data] of Object.entries(importedPhotos)){
+      if(typeof data==="string" && data.startsWith("data:")){
+        await savePhoto(key,data);
+      }
+    }
+
+    closeModal();
+    render();
+    toast(t("dataImported"));
+  }catch(e){
+    console.error("Import failed:",e);
+    alert(t("importError"));
+  }
 }
 
 function fileToDataURL(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file)})}
