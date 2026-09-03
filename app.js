@@ -3,7 +3,7 @@
 const LANG_KEY = "meuTreinoLanguageV1";
 const LANGS = {
   pt: {
-    code: "pt-BR", languageName: "Português", greeting: "Bem-vindo",
+    code: "pt-BR", name: "Português (Brasil)", greeting: "Bem-vindo",
     welcome: "Bem-vindo!", welcomeSub: "Monte seus treinos e acompanhe cada série.", yourName: "Seu nome", namePlaceholder: "Seu nome", favouriteColour: "Cor favorita", start: "Começar",
     settings: "Configurações", manageWorkouts: "Gerenciar treinos", personalisation: "Personalização",
     todayWorkout: "Qual treino vamos fazer hoje?", exercise: "exercício", exercises: "exercícios", noneWorkouts: "Nenhum treino ainda.", finishWorkout: "Finalizar treino",
@@ -12,12 +12,12 @@ const LANGS = {
     newWorkout: "Novo treino", newExercise: "Novo exercício", deleteWorkoutConfirm: "Excluir este treino?",
     deleteLastExercise: "O treino precisa ter pelo menos um exercício.", deleteExerciseConfirm: name => `Excluir o exercício "${name}"?\n\nEssa ação não pode ser desfeita.`,
     photoExercise: "Foto do exercício", photoSaved: "Foto salva", profilePhoto: "Foto de perfil", changePhoto: "Trocar foto", addPhoto: "Adicionar foto", removePhoto: "Remover foto",
-    greetingLabel: "Saudação", greetingPlaceholder: "Bem-vindo", language: "Idioma", apply: "Aplicar", applied: "Personalização aplicada", exportData: "Exportar treinos", importData: "Importar treinos", dataExported: "Treinos exportados", dataImported: "Treinos importados", importError: "Arquivo inválido.",
-    workoutSaved: "Treino salvo", athlete: "Atleta", profileAlt: "Foto de perfil", exercisePhotoAlt: "Foto do exercício",
+    greetingLabel: "Saudação", greetingPlaceholder: "Bem-vindo", language: "Idioma", apply: "Aplicar", applied: "Personalização aplicada",
+    workoutSaved: "Treino salvo", athlete: "Atleta", profileAlt: "Foto de perfil", exercisePhotoAlt: "Foto do exercício", exportData: "Exportar meus dados", importData: "Importar meus dados", exportDone: "Dados exportados", importDone: "Dados importados", importConfirm: "Isso vai substituir os dados atuais deste aparelho. Continuar?", invalidBackup: "Arquivo de backup inválido.",
     colours: { Azul: "Azul", Amarelo: "Amarelo", Roxo: "Roxo", Verde: "Verde", Vermelho: "Vermelho", Rosa: "Rosa" }
   },
   en: {
-    code: "en-GB", languageName: "English", greeting: "Welcome",
+    code: "en-GB", name: "English (UK)", greeting: "Welcome",
     welcome: "Welcome!", welcomeSub: "Build your workouts and track every set.", yourName: "Your name", namePlaceholder: "Your name", favouriteColour: "Favourite colour", start: "Get started",
     settings: "Settings", manageWorkouts: "Manage workouts", personalisation: "Personalisation",
     todayWorkout: "Which workout shall we do today?", exercise: "exercise", exercises: "exercises", noneWorkouts: "No workouts yet.", finishWorkout: "Finish workout",
@@ -26,8 +26,8 @@ const LANGS = {
     newWorkout: "New workout", newExercise: "New exercise", deleteWorkoutConfirm: "Delete this workout?",
     deleteLastExercise: "The workout must have at least one exercise.", deleteExerciseConfirm: name => `Delete the exercise "${name}"?\n\nThis action cannot be undone.`,
     photoExercise: "Exercise photo", photoSaved: "Photo saved", profilePhoto: "Profile photo", changePhoto: "Change photo", addPhoto: "Add photo", removePhoto: "Remove photo",
-    greetingLabel: "Greeting", greetingPlaceholder: "Welcome", language: "Language", apply: "Apply", applied: "Personalisation applied", exportData: "Export workouts", importData: "Import workouts", dataExported: "Workouts exported", dataImported: "Workouts imported", importError: "Invalid file."
-    workoutSaved: "Workout saved", athlete: "Athlete", profileAlt: "Profile photo", exercisePhotoAlt: "Exercise photo",
+    greetingLabel: "Greeting", greetingPlaceholder: "Welcome", language: "Language", apply: "Apply", applied: "Personalisation applied",
+    workoutSaved: "Workout saved", athlete: "Athlete", profileAlt: "Profile photo", exercisePhotoAlt: "Exercise photo", exportData: "Export my data", importData: "Import my data", exportDone: "Data exported", importDone: "Data imported", importConfirm: "This will replace the current data on this device. Continue?", invalidBackup: "Invalid backup file.",
     colours: { Azul: "Blue", Amarelo: "Yellow", Roxo: "Purple", Verde: "Green", Vermelho: "Red", Rosa: "Pink" }
   }
 };
@@ -149,7 +149,7 @@ function renderWelcome(){
     <label class="label">${t("favouriteColour")}</label>
     <div class="segmented">${Object.keys(colors).map(c=>`<button class="${state.theme===c?'active':''}" data-theme="${c}">${colourName(c)}</button>`).join("")}</div>
     <label class="label">${t("language")}</label>
-    <div class="segmented language-picker">${["pt","en"].map(l=>`<button class="${getLanguage()===l?'active':''}" data-language="${l}">${LANGS[l].languageName}</button>`).join("")}</div>
+    <div class="segmented language-picker">${["pt","en"].map(l=>`<button class="${getLanguage()===l?'active':''}" data-language="${l}">${LANGS[l].name}</button>`).join("")}</div>
     <button class="primary full" id="start">${t("start")}</button>
   </section>`;
   document.querySelectorAll("[data-theme]").forEach(b=>b.onclick=()=>{state.theme=b.dataset.theme;saveState();renderWelcome();});
@@ -383,16 +383,13 @@ function openSettings(){
     <div class="segmented">${Object.keys(colors).map(c=>`<button class="${state.theme===c?'active':''}" data-settings-theme="${c}">${colourName(c)}</button>`).join("")}</div>
     <div class="spacer"></div>
     <label class="label">${t("language")}</label>
-    <div class="segmented language-picker">${["pt","en"].map(l=>`<button class="${getLanguage()===l?'active':''}" data-settings-language="${l}">${LANGS[l].languageName}</button>`).join("")}</div>
-    <div class="spacer"></div>   
-   <button class="secondary full" onclick="exportWorkoutData()">${t("exportData")}</button>
-   <div class="spacer"></div>
-   <label class="secondary-button full" style="display:block;text-align:center;box-sizing:border-box;cursor:pointer">
-     ${t("importData")}
-     <input id="import-workout-data" type="file" accept=".json,application/json" hidden>
-   </label>
-   <div class="spacer"></div>
-
+    <div class="segmented language-picker">${["pt","en"].map(l=>`<button class="${getLanguage()===l?'active':''}" data-settings-language="${l}">${LANGS[l].name}</button>`).join("")}</div>
+    <div class="spacer"></div>
+    <button class="secondary full" onclick="exportBackup()">${t("exportData")}</button>
+    <div class="spacer"></div>
+    <button class="secondary full" onclick="document.querySelector("#import-backup-input").click()">${t("importData")}</button>
+    <input id="import-backup-input" type="file" accept=".json,application/json" hidden>
+    <div class="spacer"></div>
     <button class="primary full" onclick="saveSettings()">${t("apply")}</button>
   `);
   document.querySelectorAll("[data-settings-theme]").forEach(b=>b.onclick=()=>{
@@ -410,92 +407,19 @@ function openSettings(){
   };
   const rem=document.querySelector("#remove-profile-photo");
   if(rem) rem.onclick=()=>{saveProfilePhoto("");openSettings();};
-   const importInput=document.querySelector("#import-workout-data");
-   if(importInput) importInput.onchange=async()=>{
-     const file=importInput.files?.[0];
-     if(file) await importWorkoutData(file);
-   };
+
+  const importInput=document.querySelector("#import-backup-input");
+  if(importInput) importInput.onchange=async()=>{
+    const f=importInput.files?.[0];
+    if(!f)return;
+    await importBackup(f);
+  };
 }
 
 function saveSettings(){
   saveGreeting((document.querySelector("#capi-greeting")?.value||"").trim()||t("greeting"));
   state.userName=(document.querySelector("#settingsName")?.value||"").trim()||t("athlete");
   saveState(); closeModal(); render(); toast(t("applied"));
-}
-
-async function exportWorkoutData(){
-  try{
-    const photos={};
-    for(const w of state.workouts||[]){
-      for(const ex of w.exercises||[]){
-        if(ex.photoKey && !photos[ex.photoKey]){
-          const data=await getPhoto(ex.photoKey);
-          if(data) photos[ex.photoKey]=data;
-        }
-      }
-    }
-    const payload={
-      format:"meuTreino",
-      version:2,
-      exportedAt:new Date().toISOString(),
-      state:JSON.parse(JSON.stringify(state)),
-      photos
-    };
-    const blob=new Blob([JSON.stringify(payload)],{type:"application/json"});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement("a");
-    a.href=url;
-    a.download="meu-treino.json";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),1000);
-    toast(t("dataExported"));
-  }catch(e){
-    console.error("Export failed:",e);
-    alert(t("importError"));
-  }
-}
-
-async function importWorkoutData(file){
-  try{
-    const payload=JSON.parse(await file.text());
-    let importedState=null;
-    let importedPhotos={};
-
-    if(payload && payload.format==="meuTreino" && payload.state){
-      importedState=payload.state;
-      importedPhotos=payload.photos||{};
-    }else if(payload && Array.isArray(payload.workouts)){
-      importedState=payload;
-      importedPhotos=payload.photos||{};
-    }
-
-    if(!importedState || !Array.isArray(importedState.workouts)){
-      throw new Error("Invalid workout file");
-    }
-
-    state={
-      configured: importedState.configured ?? true,
-      userName: importedState.userName ?? state.userName ?? "",
-      theme: importedState.theme ?? state.theme ?? "Azul",
-      workouts: importedState.workouts
-    };
-    saveState();
-
-    for(const [key,data] of Object.entries(importedPhotos)){
-      if(typeof data==="string" && data.startsWith("data:")){
-        await savePhoto(key,data);
-      }
-    }
-
-    closeModal();
-    render();
-    toast(t("dataImported"));
-  }catch(e){
-    console.error("Import failed:",e);
-    alert(t("importError"));
-  }
 }
 
 function fileToDataURL(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file)})}
@@ -510,6 +434,110 @@ async function savePhoto(key,data){
   });
 }
 async function getPhoto(key){const db=await photoDB();return new Promise((res,rej)=>{const tx=db.transaction("photos","readonly");const q=tx.objectStore("photos").get(key);q.onsuccess=()=>res(q.result||null);q.onerror=()=>rej(q.error)})}
+
+async function getAllPhotos(){
+  const db=await photoDB();
+  return new Promise((res,rej)=>{
+    const tx=db.transaction("photos","readonly");
+    const store=tx.objectStore("photos");
+    const out={};
+    const req=store.openCursor();
+    req.onsuccess=()=>{
+      const cursor=req.result;
+      if(!cursor){res(out);return}
+      out[cursor.key]=cursor.value;
+      cursor.continue();
+    };
+    req.onerror=()=>rej(req.error);
+  });
+}
+
+async function replaceAllPhotos(photos){
+  const db=await photoDB();
+  return new Promise((res,rej)=>{
+    const tx=db.transaction("photos","readwrite");
+    const store=tx.objectStore("photos");
+    store.clear();
+    Object.entries(photos||{}).forEach(([key,value])=>store.put(value,key));
+    tx.oncomplete=res;
+    tx.onerror=()=>rej(tx.error);
+    tx.onabort=()=>rej(tx.error||new Error("Photo import aborted"));
+  });
+}
+
+function downloadTextFile(filename,text){
+  const blob=new Blob([text],{type:"application/json;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download=filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+async function exportBackup(){
+  try{
+    const backup={
+      format:"MeuTreinoBackup",
+      version:1,
+      exportedAt:new Date().toISOString(),
+      state:state,
+      language:getLanguage(),
+      greeting:localStorage.getItem("capiGreeting")||"",
+      profilePhoto:getProfilePhoto(),
+      photos:await getAllPhotos()
+    };
+    downloadTextFile("meu-treino-backup.json",JSON.stringify(backup));
+    toast(t("exportDone"));
+  }catch(e){
+    alert("Não foi possível exportar os dados.");
+  }
+}
+
+async function importBackup(file){
+  try{
+    const text=await file.text();
+    const backup=JSON.parse(text);
+
+    if(
+      !backup ||
+      backup.format!=="MeuTreinoBackup" ||
+      backup.version!==1 ||
+      !backup.state ||
+      !Array.isArray(backup.state.workouts)
+    ){
+      throw new Error("Invalid backup");
+    }
+
+    if(!confirm(t("importConfirm"))) return;
+
+    state=backup.state;
+    saveState();
+
+    if(backup.language==="en" || backup.language==="pt"){
+      setLanguage(backup.language);
+    }
+
+    if(typeof backup.greeting==="string"){
+      if(backup.greeting) localStorage.setItem("capiGreeting",backup.greeting);
+      else localStorage.removeItem("capiGreeting");
+    }
+
+    if(typeof backup.profilePhoto==="string"){
+      saveProfilePhoto(backup.profilePhoto);
+    }
+
+    await replaceAllPhotos(backup.photos||{});
+
+    closeModal();
+    render();
+    toast(t("importDone"));
+  }catch(e){
+    alert(t("invalidBackup"));
+  }
+}
 
 if("serviceWorker" in navigator) window.addEventListener("load",()=>navigator.serviceWorker.register("service-worker.js").catch(()=>{}));
 render();
